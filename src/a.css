@@ -1,0 +1,5 @@
+@import './b.css';
+body{
+    background-color: pink;
+    transform: scale(0.5);
+}
