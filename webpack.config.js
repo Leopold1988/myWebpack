@@ -2,17 +2,15 @@ const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 const TerserJSPlugin = require('terser-webpack-plugin'); // 压缩JS
-const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin'); // 压缩CSS
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+
+const { CleanWebpackPlugin } = require('clean-webpack-plugin'); // 删除生成目录
+const CopyWebpackPlugin = require('copy-webpack-plugin'); // 拷贝指定文件夹
+
+const webpack = require('webpack');
 
 module.exports = {
-    devServer: {
-        port: 8080,
-        progress: true,
-        contentBase: './dist',
-        open: true,
-        compress: true
-    },
     mode: 'development', // development production
     entry: './src/index.js',
     output: {
@@ -20,6 +18,26 @@ module.exports = {
         path: path.resolve(__dirname, 'dist'),
         // publicPath: 'http://www.baidu.com' // 在每个路径(css/image)都会添加此路径
     },
+    // 开启一个http服务
+    devServer: {
+        port: 8080,
+        progress: true,
+        contentBase: './dist',
+        open: true,
+        compress: true
+    },
+    // 热更新
+    watch: false,
+    watchOptions: {
+        poll: 1000, // 每秒询问次数
+        aggregateTimeout: 500, // 防抖
+        ignored: /node_modules/ // 不需要监控
+    },
+    // source-map                       会生成一个map文件 标识当前报错的 列 和 行
+    // eval-source-map                  不会生成map文件集成到bundle.js里 标识报错的列和行
+    // cheap-module-source-map          会生成一个map文件 标识当前报错的 行
+    // cheap-module-eval-source-map     不会生成map文件集成到bundle.js里 标识当前报错的 行
+    devtool: 'cheap-module-eval-source-map',
     module: {
         rules: [
             {
@@ -64,15 +82,15 @@ module.exports = {
                     'less-loader'
                 ]
             },
-            {
-                test: /\.js$/,
-                use: {
-                    loader: 'eslint-loader',
-                    options: {
-                        enforce: 'pre' // 在babel-loader之前被执行
-                    }
-                }
-            },
+            // {
+            //     test: /\.js$/,
+            //     use: {
+            //         loader: 'eslint-loader',
+            //         options: {
+            //             enforce: 'pre' // 在babel-loader之前被执行
+            //         }
+            //     }
+            // },
             {
                 test: /\.js$/,
                 use: 'babel-loader',
@@ -81,7 +99,8 @@ module.exports = {
             }
         ]
     },
-    externals: { // 不打包到bundle.js
+    // 不打包到bundle.js
+    externals: {
         jquery: "$"
     },
     optimization: {
@@ -99,6 +118,16 @@ module.exports = {
         }),
         new MiniCssExtractPlugin({
             filename: 'css/main.css'
-        })
+        }),
+        new CleanWebpackPlugin(),
+        new CopyWebpackPlugin({
+            patterns: [
+                { from: './txt', to: './txt' }
+            ]
+        }),
+        new webpack.DefinePlugin({ // 定义环境变量 
+            DEV: JSON.stringify('development') // ESlint 会提示 DEV define
+        }),
+        new webpack.BannerPlugin('by leopold') // 版权声明
     ]
 }
